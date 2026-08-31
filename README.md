@@ -17,12 +17,13 @@ VYNX focuses on understandable security analysis, including English, Urdu, mixed
 - Qwen AI contextual analysis that degrades gracefully when no API key is configured
 - Risk score 0–100 with verdict, confidence, signals and recommended action
 - SQLite scan history available via GET /api/history
+- Scan history view in the UI (latest 20 scans)
+- Rate limiting, payload-size guard and security headers on the API
 
 ---
 
 ## Roadmap
 
-- Frontend history page
 - Supabase anonymous sessions
 - Light/dark theme
 - Deployment to Alibaba Cloud SAE via Docker
