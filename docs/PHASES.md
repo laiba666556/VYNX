@@ -1,10 +1,5 @@
 
-**What changed:** Added character limits to Core Inputs. Added Authentication to Locked Technology. Updated Deployment to SAE/Docker. Added Evidence Fusion Formula section. Added History section with Anonymous Auth details. Updated Architecture Principle diagram to show parallel execution and validation.
-
----
-
-## `docs/PHASES.md`
-
+# VYNX — Implementation Phases
 ```markdown
 # VYNX — Implementation Phases
 

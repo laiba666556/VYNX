@@ -10,20 +10,22 @@ VYNX focuses on understandable security analysis, including English, Urdu, mixed
 
 ## Core Features
 
-- URL analysis
-- Message/SMS analysis
-- Email analysis
-- AI contextual analysis (Qwen)
-- Deterministic security rules (Rule Engine)
-- Risk score from 0–100
-- Verdict
-- Confidence
-- Suspicious signals
-- Plain-language explanation
-- Recommended action
-- Scan history (Supabase, anonymous sessions)
-- Light/dark mode
-- Responsive interface
+- URL/message/email scanning
+- Rule engine covering English, Roman-Urdu and Urdu-script phishing patterns
+- Sender spoofing and look-alike domain detection
+- Blacklist hard-veto for known malicious indicators
+- Qwen AI contextual analysis that degrades gracefully when no API key is configured
+- Risk score 0–100 with verdict, confidence, signals and recommended action
+- SQLite scan history available via GET /api/history
+
+---
+
+## Roadmap
+
+- Frontend history page
+- Supabase anonymous sessions
+- Light/dark theme
+- Deployment to Alibaba Cloud SAE via Docker
 
 ---
 
@@ -44,4 +46,15 @@ Evidence Fusion (Base + Penalty/Reward + Hard Veto)
 ↓
 Risk Result
 ↓
-Supabase (Anonymous Auth for history)
+SQLite (scan history)
+```
+
+---
+
+## Running locally
+
+Backend: `pip install -r requirements.txt` then `uvicorn backend.main:app --reload` (port 8000)
+
+Frontend: `npm install` then `npm run dev` (port 5173)
+
+Tests: `pytest`
