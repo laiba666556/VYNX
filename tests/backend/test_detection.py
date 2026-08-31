@@ -163,4 +163,54 @@ def test_database_basic_operations():
             if os.path.exists(temp_db_path):
                 os.remove(temp_db_path)
         except:
-            pass  # Ignore cleanup errors
+            pass
+
+def test_look_alike_domain_detection():
+    """Test look-alike domain detection for Pakistani services."""
+    # Test HBL look-alike domains
+    signals, score = analyze_url("http://hbl-login-secure.com/verify")
+    assert any("Look-alike" in signal for signal in signals)
+    assert score >= 25
+    
+    signals, score = analyze_url("https://hb1-secure-update.com")
+    assert any("Look-alike" in signal for signal in signals)
+    assert score >= 25
+    
+    # Test legitimate HBL domain (should not trigger look-alike detection)
+    signals, score = analyze_url("https://www.hbl.com.pk/personal")
+    assert not any("Look-alike" in signal for signal in signals)
+
+
+def test_sender_spoofing():
+    """Test sender spoofing detection."""
+    signals, score = analyze_message("From: HBL Bank <alerts@gmail.com>\nYour account will be blocked.")
+    assert any("Sender spoofing" in signal for signal in signals)
+    assert score >= 30
+
+
+def test_pakistani_mixed_urdu_english_phishing_email():
+    """Test detection of mixed Urdu-English phishing emails."""
+    message = "URGENT: Your JazzCash account will be blocked. Fori jawab den. OTP code batao warna account band kar diya jayega."
+    signals, score = analyze_message(message)
+    assert score >= 75
+    
+    verdict, _, _ = get_verdict_and_level_and_action(score, signals, True)
+    assert verdict == "PHISHING"
+
+
+def test_urdu_script_message():
+    """Test detection of Urdu script messages."""
+    message = "فوری اقدام: آپ کا اکاؤنٹ بند ہو جائے گا، پاس ورڈ بتائیں"
+    signals, score = analyze_message(message)
+    assert len(signals) > 0
+    assert score >= 50
+
+
+def test_legit_bank_sms_stays_safe():
+    """Test that legitimate bank SMS stays safe."""
+    message = "Dear customer, your HBL account statement for August is available in the HBL mobile app."
+    signals, score = analyze_message(message)
+    assert score <= 25
+    
+    verdict, _, _ = get_verdict_and_level_and_action(score, signals, True)
+    assert verdict == "SAFE"
