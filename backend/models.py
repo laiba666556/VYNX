@@ -23,3 +23,5 @@ class ScanResponse(BaseModel):
     signals: list[str]
     ai_available: bool
     ai_explanation: Optional[str] = None
+    confidence: float
+    recommended_action: str

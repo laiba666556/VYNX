@@ -1,16 +1,21 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 from backend.models import ScanRequest, ScanResponse
 from detection.rules import analyze_url, analyze_message
-from detection.scoring import calculate_final_score, get_verdict_and_level
+from detection.blacklist import check_blacklist
+from detection.scoring import calculate_final_score, get_verdict_and_level_and_action, calculate_confidence
 from ai.qwen_client import analyze_with_qwen
+from backend.database import db
+
+# Load environment variables from .env file
+load_dotenv()
 
 app = FastAPI(title="VYNX API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
-    allow_credentials=True,
+    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], 
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -23,31 +28,64 @@ def health_check():
 async def scan_content(request: ScanRequest):
     signals = []
     base_score = 0
+    hard_veto = False
 
-    # 1. Run Rule Engine (Synchronous and very fast)
-    if request.input_type == "url":
-        signals, base_score = analyze_url(request.content)
-    elif request.input_type in ["message", "email"]:
-        signals, base_score = analyze_message(request.content)
+    # Check for hard veto indicators first
+    if check_blacklist(request.content):
+        hard_veto = True
+        signals.append("Known malicious indicator matched")
 
-    # 2. Run AI Engine (Asynchronous)
-    ai_result = await analyze_with_qwen(request.content, request.input_type)
+    # 1. Run Rule Engine (Synchronous and very fast) - only if no hard veto
+    if not hard_veto:
+        if request.input_type == "url":
+            signals, base_score = analyze_url(request.content)
+        elif request.input_type in ["message", "email"]:
+            signals, base_score = analyze_message(request.content)
+
+    # 2. Run AI Engine (Asynchronous) - only if no hard veto
+    ai_result = {"ai_risk_delta": 0, "ai_explanation": "AI analysis unavailable.", "ai_available": False}
+    if not hard_veto:
+        ai_result = await analyze_with_qwen(request.content, request.input_type)
     
     ai_delta = ai_result.get("ai_risk_delta", 0)
     ai_explanation = ai_result.get("ai_explanation", "AI analysis unavailable.")
     
-    # If we have a placeholder key, AI might return 0 delta, which is fine (fallback mode)
-    ai_available = ai_delta != 0 or ai_explanation != "AI analysis unavailable."
+    # Updated line: Use the explicit ai_available from ai_result
+    ai_available = bool(ai_result.get("ai_available", False))
 
     # 3. Evidence Fusion
-    final_score = calculate_final_score(base_score=base_score, ai_delta=ai_delta, hard_veto=False)
-    verdict, risk_level = get_verdict_and_level(final_score)
+    final_score = calculate_final_score(base_score=base_score, ai_delta=ai_delta, hard_veto=hard_veto)
+    verdict, risk_level, recommended_action = get_verdict_and_level_and_action(final_score, signals, ai_available)
+    confidence = calculate_confidence(signals, ai_available, base_score, ai_delta)
 
-    return ScanResponse(
+    response = ScanResponse(
         risk_score=final_score,
         verdict=verdict,
         risk_level=risk_level,
         signals=signals,
         ai_available=ai_available,
-        ai_explanation=ai_explanation if ai_available else None
+        ai_explanation=ai_explanation if ai_available else None,
+        confidence=confidence,
+        recommended_action=recommended_action
     )
+    
+    # Save scan to history (wrapped in try/except so it never breaks the response)
+    try:
+        db.save_scan(
+            input_type=request.input_type,
+            risk_score=final_score,
+            verdict=verdict,
+            risk_level=risk_level,
+            signals=signals,
+            ai_explanation=response.ai_explanation
+        )
+    except Exception as e:
+        # Log error but continue with response
+        print(f"Error saving scan to history: {e}")
+    
+    return response
+
+@app.get("/api/history")
+def get_history():
+    """Return the last 20 scans, newest first."""
+    return db.get_recent_scans(limit=20)
