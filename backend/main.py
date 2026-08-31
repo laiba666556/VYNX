@@ -1,3 +1,5 @@
+import os
+import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
@@ -7,6 +9,10 @@ from detection.blacklist import check_blacklist
 from detection.scoring import calculate_final_score, get_verdict_and_level_and_action, calculate_confidence
 from ai.qwen_client import analyze_with_qwen
 from backend.database import db
+from backend.security import SecurityMiddleware
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,9 +21,13 @@ app = FastAPI(title="VYNX API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"], 
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=os.environ.get("FRONTEND_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(","),
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
+)
+
+app.add_middleware(
+    SecurityMiddleware
 )
 
 @app.get("/api/health")
@@ -81,7 +91,7 @@ async def scan_content(request: ScanRequest):
         )
     except Exception as e:
         # Log error but continue with response
-        print(f"Error saving scan to history: {e}")
+        logger.error(f"Error saving scan to history: {e}")
     
     return response
 

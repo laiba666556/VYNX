@@ -1,7 +1,12 @@
 import sqlite3
 import json
+import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ScanHistoryDB:
@@ -41,7 +46,7 @@ class ScanHistoryDB:
                 conn.commit()
         except Exception as e:
             # Log the error but don't break the scan process
-            print(f"Error saving scan to database: {e}")
+            logger.error(f"Error saving scan to database: {e}")
     
     def get_recent_scans(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Retrieve the most recent scans from the database."""
@@ -73,7 +78,7 @@ class ScanHistoryDB:
                 return scans
         except Exception as e:
             # Log the error but return empty list
-            print(f"Error retrieving scans from database: {e}")
+            logger.error(f"Error retrieving scans from database: {e}")
             return []
 
 
