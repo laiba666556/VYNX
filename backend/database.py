@@ -3,6 +3,7 @@ import json
 import logging
 from datetime import datetime
 from typing import List, Dict, Any, Optional
+from contextlib import closing
 
 
 # Configure logging
@@ -16,7 +17,7 @@ class ScanHistoryDB:
     
     def init_db(self):
         """Initialize the database and create the scan_history table if it doesn't exist."""
-        with sqlite3.connect(self.db_path) as conn:
+        with closing(sqlite3.connect(self.db_path)) as conn, conn:
             cursor = conn.cursor()
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS scan_history (
@@ -36,7 +37,7 @@ class ScanHistoryDB:
                   signals: List[str], ai_explanation: Optional[str]):
         """Save a scan result to the database."""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with closing(sqlite3.connect(self.db_path)) as conn, conn:
                 cursor = conn.cursor()
                 cursor.execute("""
                     INSERT INTO scan_history 
@@ -51,7 +52,7 @@ class ScanHistoryDB:
     def get_recent_scans(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Retrieve the most recent scans from the database."""
         try:
-            with sqlite3.connect(self.db_path) as conn:
+            with closing(sqlite3.connect(self.db_path)) as conn, conn:
                 conn.row_factory = sqlite3.Row  # Enable column access by name
                 cursor = conn.cursor()
                 cursor.execute("""
