@@ -1,10 +1,16 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import RiskMeter from './components/RiskMeter';
+import Toast from './components/Toast';
+import HistoryPanel from './components/HistoryPanel';
+import type { ScanResponse } from './types';
 
 function App() {
   const [inputType, setInputType] = useState<'url' | 'message' | 'email'>('url');
   const [content, setContent] = useState('');
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<ScanResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleScan = async () => {
     if (!content.trim()) return;
@@ -12,105 +18,148 @@ function App() {
     setResult(null);
 
     try {
-         const response = await fetch('/api/scan',  {
+      const response = await fetch('/api/scan', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ input_type: inputType, content: content }),
       });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
       const data = await response.json();
       setResult(data);
+      // Bump refresh key to trigger history reload
+      setRefreshKey(prev => prev + 1);
     } catch (error) {
       console.error('Scan failed:', error);
-      alert('Failed to connect to backend. Is the server running?');
+      setToastMessage('Backend unreachable — start the server and try again');
     } finally {
       setLoading(false);
     }
   };
 
-  const getScoreColor = (score: number) => {
-    if (score <= 25) return 'text-green-600';
-    if (score <= 50) return 'text-yellow-600';
-    if (score <= 75) return 'text-orange-600';
-    return 'text-red-600';
+  // Clear toast after 4 seconds
+  useEffect(() => {
+    if (toastMessage) {
+      const timer = setTimeout(() => {
+        setToastMessage(null);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toastMessage]);
+
+  const getVerdictColor = (level: string) => {
+    switch(level) {
+      case 'LOW': return 'verdict-low';
+      case 'MEDIUM': return 'verdict-medium';
+      case 'HIGH': return 'verdict-high';
+      case 'CRITICAL': return 'verdict-critical';
+      default: return 'verdict-default';
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-xl shadow-lg p-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2 text-center">VYNX Threat Scanner</h1>
-        <p className="text-gray-500 text-center mb-6">AI-Powered Phishing & Scam Detection</p>
+    <div className="app-container">
+      <header className="app-header">
+        <h1 className="wordmark">VYNX</h1>
+        <p className="tagline">AI-Powered Phishing & Scam Detection for Pakistan</p>
+      </header>
 
-        <div className="flex gap-2 mb-4">
-          {(['url', 'message', 'email'] as const).map((type) => (
+      <div className="main-content">
+        <div className="scanner-section">
+          <div className="input-controls">
+            <div className="tab-buttons">
+              {(['url', 'message', 'email'] as const).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setInputType(type)}
+                  className={`tab-button ${inputType === type ? 'active-tab' : ''}`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder={inputType === 'url' ? 'Paste URL here...' : 'Paste message or email content here...'}
+              className="input-textarea"
+            />
+
             <button
-              key={type}
-              onClick={() => setInputType(type)}
-              className={`flex-1 py-2 px-4 rounded-lg font-medium capitalize transition ${
-                inputType === type 
-                  ? 'bg-blue-600 text-white' 
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
+              onClick={handleScan}
+              disabled={loading || !content.trim()}
+              className="scan-button"
             >
-              {type}
+              {loading ? 'Analyzing...' : 'Scan for Threats'}
             </button>
-          ))}
+          </div>
+
+          {result && (
+            <div className="result-panel">
+              <div className="meter-and-info">
+                <RiskMeter score={result.risk_score} level={result.risk_level} />
+                
+                <div className="info-sections">
+                  <div className="verdict-section">
+                    <span className={`verdict-chip ${getVerdictColor(result.risk_level)}`}>
+                      {result.verdict}
+                    </span>
+                    <span className={`risk-level-chip ${getVerdictColor(result.risk_level)}`}>
+                      {result.risk_level}
+                    </span>
+                  </div>
+
+                  <div className="confidence-section">
+                    <p>Confidence: {Math.round(result.confidence * 100)}%</p>
+                    <div className="confidence-bar">
+                      <div 
+                        className="confidence-fill" 
+                        style={{ width: `${result.confidence * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="action-section">
+                    <p className="recommended-action">{result.recommended_action}</p>
+                  </div>
+                </div>
+              </div>
+
+              {result.signals.length > 0 && (
+                <div className="signals-section">
+                  <p>Triggered Signals:</p>
+                  <ul className="signals-list">
+                    {result.signals.map((signal, idx) => (
+                      <li key={idx} className="signal-item">{signal}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="ai-section">
+                {result.ai_available && result.ai_explanation ? (
+                  <div>
+                    <p className="ai-title">🤖 AI Analysis:</p>
+                    <p>{result.ai_explanation}</p>
+                  </div>
+                ) : (
+                  <p className="ai-offline">AI engine offline — rule-engine verdict only</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          placeholder={inputType === 'url' ? 'Paste URL here...' : 'Paste message or email content here...'}
-          className="w-full h-32 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none mb-4"
-        />
-
-        <button
-          onClick={handleScan}
-          disabled={loading || !content.trim()}
-          className="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition"
-        >
-          {loading ? 'Analyzing...' : 'Scan for Threats'}
-        </button>
-
-        {result && (
-          <div className="mt-6 p-6 bg-gray-50 rounded-lg border border-gray-200">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Scan Result</h2>
-              <span className={`text-3xl font-black ${getScoreColor(result.risk_score)}`}>
-                {result.risk_score}/100
-              </span>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-gray-500">Verdict</p>
-                <p className="font-semibold text-lg">{result.verdict}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Risk Level</p>
-                <p className="font-semibold text-lg">{result.risk_level}</p>
-              </div>
-            </div>
-
-            {result.signals.length > 0 && (
-              <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-2">Triggered Signals:</p>
-                <ul className="list-disc list-inside text-sm text-gray-700 space-y-1">
-                  {result.signals.map((signal: string, idx: number) => (
-                    <li key={idx}>{signal}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {result.ai_available && result.ai_explanation && (
-              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                <p className="text-sm font-semibold text-blue-800 mb-1">🤖 AI Analysis:</p>
-                <p className="text-sm text-blue-700">{result.ai_explanation}</p>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="history-section">
+          <HistoryPanel refreshKey={refreshKey} />
+        </div>
       </div>
+
+      <Toast message={toastMessage} />
     </div>
   );
 }
