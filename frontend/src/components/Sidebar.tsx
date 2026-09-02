@@ -19,7 +19,7 @@ function Sidebar({ view, onNavigate, theme, onToggleTheme, onSignOut, onOpenLega
   return (
     <aside className="sidebar">
       <div className="side-brand">
-        <img src="/logo.svg" alt="" width="30" height="30" />
+        <img src="/logo.png" alt="" width="46" height="30" />
         <span className="wordmark">VYNX</span>
       </div>
 

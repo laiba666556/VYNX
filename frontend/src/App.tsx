@@ -203,7 +203,8 @@ function App() {
           {loading ? 'Analyzing…' : 'Scan for threats'}
         </button>
         <p className="scan-hint" id="scan-hint">
-          Press Ctrl + Enter to scan. Results are stored against your guest session on this device.
+          Paste in English, Roman-Urdu, or Urdu — the script is detected automatically. Press Ctrl + Enter to scan;
+          results stay on this device under your guest session.
         </p>
       </div>
 

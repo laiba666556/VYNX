@@ -7,7 +7,7 @@ function SignIn({ onSignIn, onOpenLegal }: SignInProps) {
   return (
     <div className="sign-in-wrap">
       <main className="sign-in-card">
-        <img className="sign-in-logo" src="/logo.svg" alt="" width="64" height="64" />
+        <img className="sign-in-logo" src="/logo.png" alt="" width="98" height="64" />
         <h1 className="wordmark">VYNX</h1>
         <p className="tagline">
           AI-powered phishing and scam detection for Pakistan. Check a suspicious link, SMS, or email in English,
