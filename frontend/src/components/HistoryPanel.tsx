@@ -1,72 +1,91 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { HistoryEntry } from '../types';
 
 interface HistoryPanelProps {
+  sessionId: string;
   refreshKey: number;
 }
 
-const HistoryPanel: React.FC<HistoryPanelProps> = ({ refreshKey }) => {
+const LEVEL_CLASS: Record<string, string> = {
+  LOW: 'verdict-low',
+  MEDIUM: 'verdict-medium',
+  HIGH: 'verdict-high',
+  CRITICAL: 'verdict-critical',
+};
+
+function formatTimestamp(value: string): string {
+  const date = new Date(value.includes('T') ? value : `${value.replace(' ', 'T')}Z`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+function HistoryPanel({ sessionId, refreshKey }: HistoryPanelProps) {
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchHistory = async () => {
+      setLoading(true);
+      setError(null);
       try {
-        setLoading(true);
-        const response = await fetch('/api/history');
+        const response = await fetch(`/api/history?session_id=${encodeURIComponent(sessionId)}`);
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        setHistory(data);
+        const data: HistoryEntry[] = await response.json();
+        if (!cancelled) setHistory(data);
       } catch (err) {
-        setError('Failed to load history');
         console.error('Error fetching history:', err);
+        if (!cancelled) setError('Failed to load history — is the backend running?');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchHistory();
-  }, [refreshKey]);
-
-  const getVerdictColor = (level: string) => {
-    switch(level) {
-      case 'LOW': return 'verdict-low';
-      case 'MEDIUM': return 'verdict-medium';
-      case 'HIGH': return 'verdict-high';
-      case 'CRITICAL': return 'verdict-critical';
-      default: return 'verdict-default';
-    }
-  };
-
-  if (loading) return <div className="history-loading">Loading...</div>;
-  if (error) return <div className="history-error">{error}</div>;
+    return () => {
+      cancelled = true;
+    };
+  }, [sessionId, refreshKey]);
 
   return (
-    <div className="history-panel">
-      <h2>Scan History</h2>
-      {history.length === 0 ? (
-        <div className="history-empty">No scans yet</div>
-      ) : (
+    <section className="history-panel" aria-labelledby="history-heading">
+      <h2 id="history-heading">Scan history</h2>
+
+      {loading && (
+        <div className="history-loading" aria-busy="true">
+          <div className="skeleton" />
+          <div className="skeleton" style={{ marginTop: 10 }} />
+          <div className="skeleton" style={{ marginTop: 10 }} />
+        </div>
+      )}
+
+      {!loading && error && <div className="history-error">{error}</div>}
+
+      {!loading && !error && history.length === 0 && (
+        <div className="history-empty">No scans in this session yet.</div>
+      )}
+
+      {!loading && !error && history.length > 0 && (
         <ul className="history-list">
           {history.map((entry, index) => (
-            <li key={index} className="history-item">
+            <li key={`${entry.created_at}-${index}`} className="history-item">
               <div className="history-item-header">
-                <span className={`verdict-chip ${getVerdictColor(entry.risk_level)}`}>
+                <span className={`verdict-chip ${LEVEL_CLASS[entry.risk_level] ?? 'verdict-default'}`}>
                   {entry.verdict}
                 </span>
                 <span className="history-input-type">{entry.input_type}</span>
                 <span className="history-score">Score: {entry.risk_score}</span>
               </div>
-              <div className="history-timestamp">{new Date(entry.created_at).toLocaleString()}</div>
+              <div className="history-timestamp">{formatTimestamp(entry.created_at)}</div>
             </li>
           ))}
         </ul>
       )}
-    </div>
+    </section>
   );
-};
+}
 
 export default HistoryPanel;

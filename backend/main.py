@@ -1,9 +1,10 @@
 import os
 import logging
-from fastapi import FastAPI
+from typing import Optional
+from fastapi import FastAPI, Query
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
-from backend.models import ScanRequest, ScanResponse
+from backend.models import ScanRequest, ScanResponse, StatsResponse
 from detection.rules import analyze_url, analyze_message
 from detection.blacklist import check_blacklist
 from detection.scoring import calculate_final_score, get_verdict_and_level_and_action, calculate_confidence
@@ -13,6 +14,8 @@ from backend.security import SecurityMiddleware
 
 # Configure logging
 logger = logging.getLogger(__name__)
+
+UUID_PATTERN = r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
 
 # Load environment variables from .env file
 load_dotenv()
@@ -35,7 +38,7 @@ def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
 @app.post("/api/scan", response_model=ScanResponse)
-async def scan_content(request: ScanRequest):
+async def scan_content(request: ScanRequest, session_id: Optional[str] = Query(None, pattern=UUID_PATTERN)):
     signals = []
     base_score = 0
     hard_veto = False
@@ -87,7 +90,8 @@ async def scan_content(request: ScanRequest):
             verdict=verdict,
             risk_level=risk_level,
             signals=signals,
-            ai_explanation=response.ai_explanation
+            ai_explanation=response.ai_explanation,
+            session_id=session_id
         )
     except Exception as e:
         # Log error but continue with response
@@ -96,6 +100,12 @@ async def scan_content(request: ScanRequest):
     return response
 
 @app.get("/api/history")
-def get_history():
-    """Return the last 20 scans, newest first."""
-    return db.get_recent_scans(limit=20)
+def get_history(session_id: Optional[str] = Query(None, pattern=UUID_PATTERN)):
+    """Return the last 20 scans, newest first, scoped to a session when given."""
+    return db.get_recent_scans(limit=20, session_id=session_id)
+
+
+@app.get("/api/stats", response_model=StatsResponse)
+def get_stats(session_id: Optional[str] = Query(None, pattern=UUID_PATTERN)):
+    """Return aggregate scan counts for the dashboard."""
+    return db.get_stats(session_id=session_id)

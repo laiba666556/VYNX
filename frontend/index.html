@@ -2,10 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="VYNX — AI-powered phishing and scam detection for Pakistan. Analyzes URLs, messages, and emails in English, Roman-Urdu, and Urdu." />
     <title>VYNX — AI Phishing & Scam Detector</title>
-    <meta name="description" content="VYNX detects phishing, scam and spam content in English, Roman-Urdu and Urdu, built for Pakistani users.">
+    <script>
+      try {
+        var theme = localStorage.getItem('vynx-theme');
+        document.documentElement.dataset.theme = theme === 'dark' ? 'dark' : 'light';
+      } catch (e) {
+        document.documentElement.dataset.theme = 'light';
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

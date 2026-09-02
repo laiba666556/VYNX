@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Optional, Literal
+from typing import Dict, Optional, Literal
 
 class ScanRequest(BaseModel):
     input_type: Literal["url", "message", "email"]
@@ -25,3 +25,12 @@ class ScanResponse(BaseModel):
     ai_explanation: Optional[str] = None
     confidence: float
     recommended_action: str
+
+
+class StatsResponse(BaseModel):
+    total_scans: int
+    verdict_counts: Dict[str, int]
+    risk_level_counts: Dict[str, int]
+    threats_blocked: int
+    safe_pct: float
+    last_scan_at: Optional[str] = None

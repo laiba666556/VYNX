@@ -1,19 +1,17 @@
-import React from 'react';
-
 interface ToastProps {
   message: string | null;
 }
 
-const Toast: React.FC<ToastProps> = ({ message }) => {
+function Toast({ message }: ToastProps) {
   if (!message) {
     return null;
   }
 
   return (
-    <div className="toast">
+    <div className="toast" role="status" aria-live="polite">
       {message}
     </div>
   );
-};
+}
 
 export default Toast;
