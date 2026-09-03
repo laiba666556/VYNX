@@ -1,5 +1,17 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
+import {
+  Globe,
+  MessageSquare,
+  Mail,
+  Sparkles,
+  ShieldCheck,
+  ShieldAlert,
+  AlertTriangle,
+  CheckCircle2,
+  Info,
+  Cpu,
+} from 'lucide-react';
 import RiskMeter from './components/RiskMeter';
 import Toast from './components/Toast';
 import Sidebar from './components/Sidebar';
@@ -31,12 +43,6 @@ const PLACEHOLDERS: Record<InputType, string> = {
   url: 'Paste the suspicious link here…',
   message: 'Paste the SMS or WhatsApp message here…',
   email: 'Paste the full email, including the sender line…',
-};
-
-const TAB_ICONS: Record<InputType, string> = {
-  url: 'link',
-  message: 'chat',
-  email: 'mail',
 };
 
 function createSessionId(): string {
@@ -171,49 +177,118 @@ function App() {
     }
   };
 
+  const TAB_ICONS = {
+    url: Globe,
+    message: MessageSquare,
+    email: Mail,
+  };
+
+  const SAMPLE_INPUTS: Array<{ label: string; type: InputType; text: string }> = [
+    {
+      label: 'HBL Account Alert',
+      type: 'message',
+      text: 'Muaziz Sarif, apka HBL account biometric na hone ki wajah se block kr dya gya hy. Fori bahaali k lye rabta krain: http://hbl-verify-security.com',
+    },
+    {
+      label: 'JazzCash Reward',
+      type: 'message',
+      text: 'Mubarak ho! Apko Benazir Income Support Program ki taraf se 25,000 rupay milay hain. Is link pr apna CNIC darj kren: bit.ly/bisp-cash-2026',
+    },
+    {
+      label: 'Suspicious Bank URL',
+      type: 'url',
+      text: 'http://secure-login.meezanbank-verify.pk/account/auth',
+    },
+  ];
+
   const scannerView = (
     <section className="scanner-section" aria-labelledby="scanner-heading" aria-busy={loading}>
-      <h1 className="view-heading" id="scanner-heading">Scan something suspicious</h1>
-      <p className="view-sub">Paste a link, SMS, or email. English, Roman-Urdu, and Urdu all work.</p>
+      <div className="scanner-hero">
+        <div className="scanner-pill-badge">
+          <Sparkles size={14} className="spark-icon" />
+          <span>Real-Time Detection Engine</span>
+        </div>
+        <h1 className="view-heading" id="scanner-heading">Threat Scanner</h1>
+        <p className="view-sub">Analyze suspicious links, SMS, WhatsApp alerts, or emails across English, Roman-Urdu, and Urdu.</p>
+      </div>
 
       <div className="input-controls">
         <div className="tab-buttons" role="group" aria-label="What are you scanning?">
-          {(['url', 'message', 'email'] as const).map((type) => (
-            <button
-              key={type}
-              type="button"
-              onClick={() => setInputType(type)}
-              aria-pressed={inputType === type}
-              className={`tab-button ${inputType === type ? 'active-tab' : ''}`}
-            >
-              <span className="material-symbols-outlined" aria-hidden="true">
-                {TAB_ICONS[type]}
-              </span>
-              {type}
-            </button>
-          ))}
+          {(['url', 'message', 'email'] as const).map((type) => {
+            const Icon = TAB_ICONS[type];
+            return (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setInputType(type)}
+                aria-pressed={inputType === type}
+                className={`tab-button ${inputType === type ? 'active-tab' : ''}`}
+              >
+                <Icon size={15} />
+                <span style={{ textTransform: 'capitalize' }}>{type}</span>
+              </button>
+            );
+          })}
         </div>
 
-        <label className="sr-only" htmlFor="scan-input">
-          Content to scan
-        </label>
-        <textarea
-          id="scan-input"
-          value={content}
-          onChange={(event) => setContent(event.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={PLACEHOLDERS[inputType]}
-          className="input-textarea"
-          aria-describedby="scan-hint"
-          spellCheck={false}
-        />
+        <div className="textarea-container">
+          <label className="sr-only" htmlFor="scan-input">
+            Content to scan
+          </label>
+          <textarea
+            id="scan-input"
+            value={content}
+            onChange={(event) => setContent(event.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder={PLACEHOLDERS[inputType]}
+            className="input-textarea"
+            aria-describedby="scan-hint"
+            spellCheck={false}
+          />
+        </div>
 
-        <button type="button" onClick={handleScan} disabled={loading || !content.trim()} className="scan-button">
-          <span className="material-symbols-outlined" aria-hidden="true">
-            bolt
-          </span>
-          {loading ? 'Analyzing…' : 'Scan for threats'}
-        </button>
+        {/* Quick prompt suggestions inspired by reference design */}
+        <div className="sample-prompts-wrap">
+          <span className="sample-prompts-label">Try sample:</span>
+          <div className="sample-prompts-list">
+            {SAMPLE_INPUTS.map((sample) => (
+              <button
+                key={sample.label}
+                type="button"
+                className="sample-prompt-chip"
+                onClick={() => {
+                  setInputType(sample.type);
+                  setContent(sample.text);
+                }}
+              >
+                <span>{sample.label}</span>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="scan-actions-bar">
+          <button
+            type="button"
+            onClick={handleScan}
+            disabled={loading || !content.trim()}
+            className="scan-button"
+          >
+            {loading ? (
+              <span className="scan-button-content">
+                <span className="spinner-dots" />
+                <span>Analyzing threat…</span>
+              </span>
+            ) : (
+              <span className="scan-button-content">
+                <Sparkles size={18} />
+                <span>Scan for threats</span>
+                <span className="kbd-shortcut" title="Press Ctrl + Enter to scan">Ctrl + ↵</span>
+              </span>
+            )}
+          </button>
+        </div>
+
         <p className="scan-hint" id="scan-hint">
           Paste in English, Roman-Urdu, or Urdu — the script is detected automatically. Press Ctrl + Enter to scan;
           results stay on this device under your guest session.
@@ -221,13 +296,23 @@ function App() {
       </div>
 
       {loading && (
-        <div className="result-panel" aria-busy="true">
+        <div className="result-panel scanning-active-card" aria-busy="true">
+          <div className="scan-beam" aria-hidden="true" />
+          <div className="scanning-status-row">
+            <div className="pulse-radar" aria-hidden="true">
+              <div className="pulse-radar-dot" />
+            </div>
+            <div>
+              <div className="scanning-status-title">Deep Threat Inspection in Progress…</div>
+              <div className="scanning-status-sub">Evaluating heuristics, linguistic signatures, and phishing vector matrices</div>
+            </div>
+          </div>
           <div className="meter-and-info">
-            <div className="skeleton skeleton-lg" style={{ width: 140, height: 140, borderRadius: '50%' }} />
+            <div className="skeleton skeleton-lg" style={{ width: 148, height: 148, borderRadius: '50%' }} />
             <div className="info-sections">
-              <div className="skeleton" style={{ width: '60%' }} />
-              <div className="skeleton" />
-              <div className="skeleton" />
+              <div className="skeleton" style={{ width: '45%', height: 32, borderRadius: 999 }} />
+              <div className="skeleton" style={{ width: '80%', height: 16 }} />
+              <div className="skeleton" style={{ width: '100%', height: 52, borderRadius: 20 }} />
             </div>
           </div>
         </div>
@@ -240,30 +325,61 @@ function App() {
 
             <div className="info-sections">
               <div className="verdict-section">
-                <span className={`verdict-chip ${levelClass(result.risk_level)}`}>{result.verdict}</span>
-                <span className={`risk-level-chip ${levelClass(result.risk_level)}`}>{result.risk_level}</span>
+                <span className={`verdict-chip ${levelClass(result.risk_level)}`}>
+                  {result.risk_level === 'CRITICAL' || result.risk_level === 'HIGH' ? (
+                    <ShieldAlert size={14} className="chip-icon" />
+                  ) : (
+                    <ShieldCheck size={14} className="chip-icon" />
+                  )}
+                  <span>{result.verdict}</span>
+                </span>
+                <span className={`risk-level-chip ${levelClass(result.risk_level)}`}>
+                  {result.risk_level} RISK
+                </span>
               </div>
 
               <div className="confidence-section">
-                <p>Confidence: {Math.round(result.confidence * 100)}%</p>
+                <div className="confidence-label-row">
+                  <span>Detection Confidence</span>
+                  <strong>{Math.round(result.confidence * 100)}%</strong>
+                </div>
                 <div className="confidence-bar">
-                  <div className="confidence-fill" style={{ width: `${result.confidence * 100}%` }} />
+                  <div
+                    className={`confidence-fill ${levelClass(result.risk_level)}`}
+                    style={{ width: `${result.confidence * 100}%` }}
+                  />
                 </div>
               </div>
 
-              <div className="action-section">
-                <p className="recommended-action">{result.recommended_action}</p>
+              <div className={`action-section action-card--${result.risk_level.toLowerCase()}`}>
+                <div className="action-icon-wrap">
+                  {result.risk_level === 'CRITICAL' || result.risk_level === 'HIGH' ? (
+                    <AlertTriangle size={18} />
+                  ) : result.risk_level === 'MEDIUM' ? (
+                    <Info size={18} />
+                  ) : (
+                    <CheckCircle2 size={18} />
+                  )}
+                </div>
+                <div className="action-text-wrap">
+                  <span className="action-title">Advisory Action</span>
+                  <p className="recommended-action">{result.recommended_action}</p>
+                </div>
               </div>
             </div>
           </div>
 
           {result.signals.length > 0 && (
             <div className="signals-section">
-              <p>Triggered signals:</p>
+              <p className="signals-title">
+                <span>Triggered Threat Signals:</span>
+                <span className="signals-count-pill">{result.signals.length} flags</span>
+              </p>
               <ul className="signals-list">
                 {result.signals.map((signal, index) => (
                   <li key={`${signal}-${index}`} className="signal-item">
-                    {signal}
+                    <span className="signal-bullet" />
+                    <span>{signal}</span>
                   </li>
                 ))}
               </ul>
@@ -272,12 +388,20 @@ function App() {
 
           <div className="ai-section">
             {result.ai_available && result.ai_explanation ? (
-              <div>
-                <p className="ai-title">AI analysis</p>
-                <p>{result.ai_explanation}</p>
+              <div className="ai-explanation-card">
+                <div className="ai-title-wrap">
+                  <div className="ai-badge">
+                    <Cpu size={14} />
+                    <span>Neural AI Explanation</span>
+                  </div>
+                </div>
+                <p className="ai-explanation-text">{result.ai_explanation}</p>
               </div>
             ) : (
-              <p className="ai-offline">AI engine offline — rule-engine verdict only</p>
+              <div className="ai-offline-wrap">
+                <Info size={14} />
+                <p className="ai-offline">AI engine offline — rule-engine verdict only</p>
+              </div>
             )}
           </div>
         </div>
@@ -291,6 +415,11 @@ function App() {
         <SignIn onSignIn={handleSignIn} onOpenLegal={() => setLegalOpen(true)} />
       ) : (
         <div className="app-shell">
+          {/* Ambient background glows */}
+          <div className="ambient-orb orb-1" aria-hidden="true" />
+          <div className="ambient-orb orb-2" aria-hidden="true" />
+          <div className="ambient-orb orb-3" aria-hidden="true" />
+
           <Sidebar
             view={view}
             onNavigate={setView}
@@ -301,6 +430,21 @@ function App() {
           />
 
           <main className="view-container">
+            {/* Top ambient cybersecurity status pill */}
+            <div className="system-status-pill" role="status">
+              <div className="system-status-left">
+                <span className="live-dot" aria-hidden="true" />
+                <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Neural Threat Engine Active</span>
+                <span>•</span>
+                <span>Qwen AI + Rule Heuristics</span>
+              </div>
+              <div className="system-status-right">
+                <span>Urdu / Roman-Urdu / English</span>
+                <span>•</span>
+                <span>Zero-Trace Private Session</span>
+              </div>
+            </div>
+
             {view === 'scanner' && scannerView}
             {view === 'dashboard' && <Dashboard sessionId={sessionId} refreshKey={refreshKey} />}
             {view === 'history' && <HistoryPanel sessionId={sessionId} refreshKey={refreshKey} />}
