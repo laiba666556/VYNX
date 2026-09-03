@@ -92,7 +92,7 @@ pip install -r requirements.txt
 uvicorn backend.main:app --reload
 ```
 
-Optional AI analysis: copy `.env.example` to `.env` and set `DASHSCOPE_API_KEY`. Without it, VYNX still works on rules alone.
+Optional AI analysis: copy `.env.example` to `.env` and set `QWEN_API_KEY`. Without it, VYNX still works on rules alone.
 
 **Frontend** (port 5173, proxies `/api` to 8000)
 
