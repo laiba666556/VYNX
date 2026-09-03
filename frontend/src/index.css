@@ -1,43 +1,45 @@
 /* VYNX flat modern theme — light default, dark twin */
 
 [data-theme='light'] {
-  --bg: #f6f7f9;
+  --bg: #f7fafc;
   --bg-accent: transparent;
   --card: #ffffff;
   --card-solid: #ffffff;
-  --border: #e2e6ec;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.06);
-  --text-primary: #101828;
-  --text-secondary: #344054;
-  --text-muted: #667085;
-  --accent: #2563eb;
-  --accent-soft: #eef4ff;
-  --on-accent: #ffffff;
-  --meter-track: #e8ecf1;
-  --low-risk: #16a34a;
-  --medium-risk: #b54708;
-  --high-risk: #dc6803;
-  --critical-risk: #d92d20;
+  --border: #d3e4fe;
+  --shadow: 0 1px 2px rgba(19, 27, 46, 0.05), 0 10px 28px rgba(0, 200, 255, 0.1);
+  --text-primary: #131b2e;
+  --text-secondary: #3d4854;
+  --text-muted: #6c7980;
+  --heading: #006684;
+  --accent: #00c8ff;
+  --accent-soft: #dff6ff;
+  --on-accent: #003546;
+  --meter-track: #e2e7ff;
+  --low-risk: #006684;
+  --medium-risk: #965500;
+  --high-risk: #b34900;
+  --critical-risk: #ba1a1a;
 }
 
 [data-theme='dark'] {
-  --bg: #0d1117;
+  --bg: #121414;
   --bg-accent: transparent;
-  --card: #161b22;
-  --card-solid: #161b22;
-  --border: #2a313c;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --text-primary: #e6edf3;
-  --text-secondary: #b6c2cf;
-  --text-muted: #8b98a9;
-  --accent: #4cc2ff;
-  --accent-soft: rgba(76, 194, 255, 0.14);
-  --on-accent: #06121f;
-  --meter-track: #2a313c;
-  --low-risk: #4ade80;
+  --card: #1b1e1e;
+  --card-solid: #1b1e1e;
+  --border: #333535;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 10px 28px rgba(0, 200, 255, 0.06);
+  --text-primary: #e2e2e2;
+  --text-secondary: #c0c7d4;
+  --text-muted: #86939a;
+  --heading: #99deff;
+  --accent: #68d3ff;
+  --accent-soft: rgba(0, 200, 255, 0.14);
+  --on-accent: #003546;
+  --meter-track: #333535;
+  --low-risk: #99deff;
   --medium-risk: #facc15;
   --high-risk: #fb923c;
-  --critical-risk: #f87171;
+  --critical-risk: #ffb4ab;
 }
 
 * {
@@ -58,6 +60,36 @@ body {
   font-size: 15px;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.wordmark,
+.stat-value,
+.view-heading,
+.dashboard-heading {
+  font-family: 'Geist', 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+.view-heading,
+.dashboard-heading,
+.wordmark {
+  color: var(--heading);
+}
+
+.material-symbols-outlined {
+  font-family: 'Material Symbols Outlined';
+  font-weight: normal;
+  font-style: normal;
+  font-size: 1.15em;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  word-wrap: normal;
+  direction: ltr;
+  font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
 }
 
 h1,
@@ -120,7 +152,7 @@ a {
 .panel {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 12px;
+  border-radius: 16px;
   box-shadow: var(--shadow);
 }
 
@@ -195,8 +227,8 @@ a {
 
 .side-link.active {
   background: var(--accent-soft);
-  border-color: var(--border);
-  color: var(--text-primary);
+  border-color: var(--accent);
+  color: var(--heading);
   font-weight: 700;
 }
 
@@ -226,6 +258,10 @@ a {
 .theme-toggle,
 .signout-button {
   flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   padding: 9px 10px;
   border: 1px solid var(--border);
   border-radius: 10px;
@@ -297,6 +333,7 @@ a {
   color: var(--on-accent);
   font-size: 1rem;
   font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 200, 255, 0.35);
 }
 
 .sign-in-button:hover {
@@ -417,6 +454,9 @@ a {
 }
 
 .tab-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   padding: 8px 18px;
   border: none;
   border-radius: 9px;
@@ -459,6 +499,10 @@ a {
 
 .scan-button {
   align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   padding: 12px 26px;
   border: none;
   border-radius: 12px;
@@ -466,6 +510,7 @@ a {
   color: var(--on-accent);
   font-size: 0.98rem;
   font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 200, 255, 0.35);
 }
 
 .scan-button:hover:not(:disabled) {
@@ -521,25 +566,25 @@ a {
 }
 
 .verdict-low {
-  background: rgba(22, 163, 74, 0.16);
+  background: #d7f4ff;
   border-color: var(--low-risk);
   color: var(--low-risk);
 }
 
 .verdict-medium {
-  background: rgba(202, 138, 4, 0.16);
+  background: #ffefc9;
   border-color: var(--medium-risk);
   color: var(--medium-risk);
 }
 
 .verdict-high {
-  background: rgba(234, 88, 12, 0.16);
+  background: #ffe4d1;
   border-color: var(--high-risk);
   color: var(--high-risk);
 }
 
 .verdict-critical {
-  background: rgba(220, 38, 38, 0.18);
+  background: #ffdad6;
   border-color: var(--critical-risk);
   color: var(--critical-risk);
 }

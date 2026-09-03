@@ -33,6 +33,12 @@ const PLACEHOLDERS: Record<InputType, string> = {
   email: 'Paste the full email, including the sender line…',
 };
 
+const TAB_ICONS: Record<InputType, string> = {
+  url: 'link',
+  message: 'chat',
+  email: 'mail',
+};
+
 function createSessionId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -180,6 +186,9 @@ function App() {
               aria-pressed={inputType === type}
               className={`tab-button ${inputType === type ? 'active-tab' : ''}`}
             >
+              <span className="material-symbols-outlined" aria-hidden="true">
+                {TAB_ICONS[type]}
+              </span>
               {type}
             </button>
           ))}
@@ -200,6 +209,9 @@ function App() {
         />
 
         <button type="button" onClick={handleScan} disabled={loading || !content.trim()} className="scan-button">
+          <span className="material-symbols-outlined" aria-hidden="true">
+            bolt
+          </span>
           {loading ? 'Analyzing…' : 'Scan for threats'}
         </button>
         <p className="scan-hint" id="scan-hint">

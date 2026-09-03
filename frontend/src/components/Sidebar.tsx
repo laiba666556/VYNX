@@ -9,10 +9,10 @@ interface SidebarProps {
   onOpenLegal: () => void;
 }
 
-const LINKS: Array<{ id: ViewState; label: string }> = [
-  { id: 'scanner', label: 'Scanner' },
-  { id: 'dashboard', label: 'Dashboard' },
-  { id: 'history', label: 'History' },
+const LINKS: Array<{ id: ViewState; label: string; icon: string }> = [
+  { id: 'scanner', label: 'Scanner', icon: 'scan' },
+  { id: 'dashboard', label: 'Dashboard', icon: 'space_dashboard' },
+  { id: 'history', label: 'History', icon: 'history' },
 ];
 
 function Sidebar({ view, onNavigate, theme, onToggleTheme, onSignOut, onOpenLegal }: SidebarProps) {
@@ -32,6 +32,9 @@ function Sidebar({ view, onNavigate, theme, onToggleTheme, onSignOut, onOpenLega
             aria-current={view === link.id ? 'page' : undefined}
             onClick={() => onNavigate(link.id)}
           >
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {link.icon}
+            </span>
             {link.label}
           </button>
         ))}
@@ -41,6 +44,9 @@ function Sidebar({ view, onNavigate, theme, onToggleTheme, onSignOut, onOpenLega
         <p className="guest-badge">Guest session — no account, history stays on this device.</p>
         <div className="side-actions">
           <button type="button" className="theme-toggle" onClick={onToggleTheme}>
+            <span className="material-symbols-outlined" aria-hidden="true">
+              {theme === 'dark' ? 'light_mode' : 'dark_mode'}
+            </span>
             {theme === 'dark' ? 'Light mode' : 'Dark mode'}
           </button>
           <button type="button" className="signout-button" onClick={onSignOut}>
