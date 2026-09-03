@@ -27,7 +27,7 @@ async def analyze_with_qwen(content: str, input_type: str) -> dict:
         logger.error("QWEN_API_KEY or QWEN_MODEL environment variables not set.")
         return {"ai_risk_delta": 0, "ai_explanation": "AI unavailable", "ai_available": False}
 
-    url = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
+    url = "https://dashscope-intl.aliyuncs.com/api/v1/services/aigc/text-generation/generation"
     headers = {
         "Authorization": f"Bearer {api_key}",
         "Content-Type": "application/json"
