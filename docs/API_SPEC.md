@@ -1,118 +1,234 @@
 # VYNX — API Specification
 
-## Base
+## 1. Base URL
 
-Development:
+Local backend:
+
 ```text
 http://localhost:8000
 ```
 
-## Endpoints
+---
 
-### GET /api/health
+## 2. Health Check
 
-Health check endpoint to verify the API is running.
+### `GET /api/health`
 
-**Response:**
+Returns the current backend and AI availability.
+
+### Example Response
+
 ```json
 {
-  "status": "healthy",
-  "version": "1.0.0"
+  "status": "ok",
+  "ai_available": true
 }
 ```
 
-### POST /api/scan
+`ai_available` indicates whether the Qwen AI service is configured and available.
 
-Scans a URL, message or email for phishing and scam indicators.
+---
 
-**Query Parameters:**
+## 3. Scan
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `session_id` | UUID v4 string | No | Anonymous guest session generated in the browser. The scan is stored with this id so `/api/history` and `/api/stats` can be scoped to one device. Omit it to store an unscoped scan. A malformed value returns **422**. |
+### `POST /api/scan`
 
-**Request Body:**
-```json
-{
-  "input_type": "url|message|email",
-  "content": "string (max 2000 chars for url/message, 10000 for email)"
-}
+Analyzes a URL, message, or email.
+
+### Request
+
+The request includes:
+
+* Content type
+* Content
+* Optional sender information
+* Session identifier where applicable
+
+### Supported Content Types
+
+```text
+url
+message
+email
 ```
 
-**Response:**
-```json
-{
-  "risk_score": "number (0-100)",
-  "verdict": "string (SAFE|SPAM|SUSPICIOUS|PHISHING|UNKNOWN)",
-  "risk_level": "string (LOW|MEDIUM|HIGH|CRITICAL)",
-  "signals": "string[] (list of triggered detection rules)",
-  "ai_available": "boolean",
-  "ai_explanation": "string|null (AI analysis if available)",
-  "confidence": "number (0.0-1.0)",
-  "recommended_action": "string (suggested action based on risk level)"
-}
+### Processing
+
+```text
+Request
+  ↓
+Validation
+  ↓
+Security Checks
+  ↓
+Rule Analysis
+  ↓
+Qwen Analysis
+  ↓
+Evidence Fusion
+  ↓
+Risk Result
 ```
 
-### GET /api/history
+### Response Fields
 
-Retrieves the latest 20 scan results, newest first.
+The scan result can contain:
 
-**Query Parameters:**
+* `risk_score`
+* `risk_level`
+* `verdict`
+* `confidence`
+* `signals`
+* `explanation`
+* `recommended_action`
+* AI availability information
+* scan metadata
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `session_id` | UUID v4 string | No | When supplied, only scans stored with that session id are returned. Without it, the endpoint returns the most recent scans across every session. A malformed value returns **422**. |
+---
 
-**Response:**
-```json
-[
-  {
-    "input_type": "string",
-    "risk_score": "number",
-    "verdict": "string",
-    "risk_level": "string",
-    "signals": "string[]",
-    "ai_explanation": "string|null",
-    "created_at": "string (timestamp)"
-  }
-]
+## 4. History
+
+### `GET /api/history`
+
+Returns scan history for the current guest session.
+
+History is associated with the session identifier.
+
+The application uses history to populate the History view.
+
+The current implementation stores history in SQLite.
+
+---
+
+## 5. Statistics
+
+### `GET /api/stats`
+
+Returns session-scoped dashboard statistics.
+
+Statistics may include:
+
+* Total scans
+* High-risk scans
+* Medium-risk scans
+* Low-risk scans
+* Recent scan information
+
+---
+
+## 6. Validation
+
+All user-controlled input is validated before analysis.
+
+Validation covers:
+
+* Required fields
+* Supported scan types
+* Maximum input sizes
+* Request structure
+* Data types
+
+Invalid input is rejected before reaching the analysis layer.
+
+FastAPI/Pydantic validation errors use the application's standard validation response behavior.
+
+---
+
+## 7. HTTP Error Handling
+
+The API may return errors including:
+
+### `413 Payload Too Large`
+
+The request exceeds the permitted payload size.
+
+### `422 Unprocessable Entity`
+
+The request structure or field values fail validation.
+
+### `429 Too Many Requests`
+
+The client exceeded the configured rate limit.
+
+### `500 Internal Server Error`
+
+An unexpected backend error occurred.
+
+### Network / Connection Failure
+
+The frontend displays an appropriate user-facing error when the backend cannot be reached.
+
+---
+
+## 8. Rate Limiting
+
+The API applies rate limiting to protect the service from excessive requests.
+
+The current configured limit is:
+
+```text
+20 requests per minute per IP
 ```
 
-### GET /api/stats
+---
 
-Aggregates stored scans for the dashboard. Runs as a single SQL query.
+## 9. Input Limits
 
-**Query Parameters:**
+Different scan types have type-specific input limits.
 
-| Name | Type | Required | Description |
-| --- | --- | --- | --- |
-| `session_id` | UUID v4 string | No | Scope the aggregates to one guest session. Without it, the response covers every stored scan. A malformed value returns **422**. |
+The backend validates these limits before processing.
 
-**Response:**
-```json
-{
-  "total_scans": "number",
-  "verdict_counts": { "SAFE": 0, "SPAM": 0, "SUSPICIOUS": 0, "PHISHING": 0, "UNKNOWN": 0 },
-  "risk_level_counts": { "LOW": 0, "MEDIUM": 0, "HIGH": 0, "CRITICAL": 0 },
-  "threats_blocked": "number (SUSPICIOUS + PHISHING)",
-  "safe_pct": "number (percentage of scans verdicted SAFE, 1 decimal)",
-  "last_scan_at": "string|null (timestamp of the newest scan)"
-}
+This prevents excessively large user-controlled content from being sent to the analysis pipeline.
+
+---
+
+## 10. Security Headers
+
+The backend applies security-related HTTP headers to responses.
+
+These are intended to reduce common browser-side security risks.
+
+---
+
+## 11. Session Handling
+
+The current MVP does not use traditional authentication.
+
+A browser-generated UUID is used to associate scan history with the current guest session.
+
+The frontend stores the session identifier locally.
+
+The backend uses the session identifier to scope stored history and statistics.
+
+---
+
+## 12. AI Failure Behavior
+
+Qwen is an optional analysis layer.
+
+If Qwen is unavailable:
+
+```text
+Request
+   ↓
+Deterministic Rules
+   ↓
+Risk Result
 ```
 
-A session with no scans returns zeroed counters and `last_scan_at: null` — it is not an error.
+The application should continue operating rather than failing the entire scan.
 
-## Error Responses
+---
 
-- **422 Unprocessable Entity**: Request validation failed (invalid input_type, content too long, or a `session_id` that is not a UUID v4)
-- **413 Payload Too Large**: Request body exceeds 100,000 bytes
-- **429 Too Many Requests**: Rate limit exceeded (20 requests per minute per IP)
+## 13. API Security Rules
 
-The UI maps these to plain-language toasts: 413 → "Content too large — trim it and try again", 422 → "Check your input — it did not pass validation", 429 → "Too many scans — wait a minute and try again", 500 → "Server error while scanning — please try again". A failed `fetch` (backend down) shows "Backend unreachable — start the server and try again".
+The API must:
 
-## Security Headers
-
-All API responses include the following security headers:
-- `X-Content-Type-Options: nosniff`
-- `X-Frame-Options: DENY`
-- `Referrer-Policy: no-referrer`
+* Treat all user input as untrusted.
+* Never execute submitted URLs.
+* Never automatically browse submitted URLs.
+* Never expose Qwen API keys.
+* Validate AI output.
+* Validate user input.
+* Apply rate limits.
+* Enforce request-size limits.

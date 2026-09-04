@@ -2,130 +2,520 @@
 
 ## AI-Powered Phishing and Scam Detector for Pakistan
 
-VYNX checks a suspicious link, SMS, or email before you act on it — in English, Roman-Urdu, and Urdu script. It combines a deterministic rule engine with optional Qwen AI analysis, fuses the evidence into a 0–100 risk score, and tells the user what to do next in plain language.
+VYNX helps users detect suspicious **URLs, SMS messages, and emails** before they interact with them.
 
-Built for the Alibaba Cloud AI Hackathon.
+It combines a deterministic security rule engine with optional **Qwen AI** contextual analysis and fuses the evidence into a **0–100 risk score**, risk level, confidence, detected signals, and a recommended action.
+
+VYNX is designed with Pakistan-specific phishing patterns in mind, including **English, Roman-Urdu, and Urdu-script content**, bank and telecom impersonation, suspicious links, urgency tactics, and requests for sensitive information.
+
+> Built for the Alibaba Cloud AI Hackathon.
 
 ---
 
 ## Core Features
 
-**Detection**
+### Detection
 
-- URL, message, and email scanning with a single endpoint
-- Rule engine covering English, Roman-Urdu, and Urdu-script phishing patterns
-- Sender spoofing and look-alike domain detection (including Pakistan-specific bank and telco impersonation)
-- Blacklist hard-veto for known malicious indicators
-- Qwen AI contextual analysis that degrades gracefully when no API key is configured — the UI labels those results "rule-engine verdict only"
-- Evidence fusion: base score + AI delta + hard veto → verdict, risk level, confidence, triggered signals, recommended action
+* URL, message, and email scanning through a unified API
+* Deterministic rule engine for:
 
-**Product**
+  * English phishing patterns
+  * Roman-Urdu phishing patterns
+  * Urdu-script phishing patterns
+  * Urgency and threat language
+  * Sensitive-information requests
+  * Suspicious links
+  * Sender spoofing
+  * Look-alike domains
+  * Pakistan-specific bank and telecom impersonation
+* Blacklist hard-veto for known malicious indicators
+* Optional Qwen AI contextual analysis
+* Graceful AI fallback when Qwen is unavailable
+* Evidence fusion combining:
 
-- Anonymous guest sessions — the browser generates a UUID, no account needed
-- Sidebar navigation with three views: Scanner, Dashboard, History
-- Dashboard aggregates for the session: total scans, threats flagged, safe percentage, verdict and risk-level breakdowns
-- Scan history scoped to the guest session (latest 20)
-- Light and dark themes, chosen before first paint and persisted in `localStorage`
-- Glass/chrome UI with motion that respects `prefers-reduced-motion`
+  * Deterministic base score
+  * AI score adjustment
+  * Security penalties/rewards
+  * Hard-veto conditions
+* Final result includes:
 
-**Robustness**
+  * Verdict
+  * Risk score
+  * Risk level
+  * Detection confidence
+  * Triggered signals
+  * Recommended action
+  * Plain-language explanation
 
-- Rate limiting (20 requests/min/IP), payload-size guard, and security headers on the API
-- Strict Pydantic validation with per-type length caps
-- SQLite history with an idempotent `session_id` migration for existing databases
-- Plain-language toasts for 413, 422, 429, 500, and network failures
-- Loading skeletons, empty states, and error states on every view
-- React error boundary with a reload path instead of a white screen
-- Keyboard support: Ctrl/Cmd + Enter to scan, visible focus rings, `aria-live` results, labelled inputs
+### Product
+
+* Anonymous guest sessions with no registration required
+* Browser-generated UUID for session identification
+* Scanner for URL, SMS, and email analysis
+* Session-scoped scan history
+* Dashboard with:
+
+  * Total scans
+  * Threats flagged
+  * Safe percentage
+  * Verdict breakdown
+  * Risk-level breakdown
+* Latest 20 scans shown in history
+* Light and dark themes
+* Theme persistence using `localStorage`
+* Glass/chrome visual design
+* Motion that respects `prefers-reduced-motion`
+* Responsive interface
+* Accessible keyboard navigation and labelled controls
 
 ---
 
-## Privacy: why there is no password
+## How VYNX Works
 
-VYNX uses anonymous guest sessions, so there is no registration, no email, and no password — which also means there is no password store to leak and no reset flow to build. The browser generates a UUID v4, keeps it in `localStorage`, and sends it as `?session_id=` on scan, history, and stats calls. The backend stores scan metadata (type, score, verdict, level, signals, timestamp) against that id and nothing else. Signing out removes the id from the browser, so the app stops showing that history on the device. Full details are in the in-app **Terms & Privacy** modal.
+```text
+User
+  |
+  v
+React + Vite Frontend
+  |
+  v
+FastAPI Backend
+  |
+  +-----------------------------+
+  |                             |
+  v                             v
+Input Validation          Security Middleware
+(Pydantic)                Rate Limit / Size Guard
+  |                       Security Headers
+  +-------------+---------------+
+                |
+                v
+       Parallel Analysis
+          /           \
+         /             \
+        v               v
+Deterministic        Qwen AI
+Rule Engine          (Optional)
+        \               /
+         \             /
+          +-----------+
+                |
+                v
+         Evidence Fusion
+                |
+                v
+        Risk & Verdict Result
+                |
+                v
+          SQLite History
+```
 
-Trade-off, stated honestly: history is device-scoped, not synced across devices. Real accounts (Supabase anonymous sign-in upgraded to email/OAuth) are on the roadmap.
+### Current MVP
+
+The current application runs locally with:
+
+* **Frontend:** React + Vite + TypeScript
+* **Styling:** Tailwind CSS / custom glass-neon UI
+* **Backend:** Python + FastAPI
+* **AI:** Qwen through DashScope
+* **Detection:** Deterministic security rules + Qwen contextual analysis
+* **Database:** SQLite
+* **Session management:** Anonymous browser UUID
+* **Testing:** Pytest
+* **Source control:** GitHub
+
+### Planned Production Architecture
+
+Production deployment is planned for Alibaba Cloud.
+
+Future infrastructure may include:
+
+* Alibaba Cloud deployment
+* Docker-based backend deployment
+* Supabase authentication
+* Managed PostgreSQL storage
+* Cross-device user history
+* Sentry monitoring
+* Community blacklist management
+
+These components are **roadmap items and are not presented as currently deployed functionality**.
+
+---
+
+## Privacy: Why There Is No Password
+
+VYNX currently uses anonymous guest sessions.
+
+There is:
+
+* No registration
+* No email collection
+* No password
+* No password database
+* No password reset flow
+
+The browser generates a UUID v4 and stores it locally.
+
+That session identifier is sent with scan, history, and statistics requests so the backend can keep the user's scan history separated from other sessions.
+
+The backend stores scan metadata such as:
+
+* Scan type
+* Risk score
+* Verdict
+* Risk level
+* Signals
+* Timestamp
+* Session identifier
+
+VYNX does not require users to create an account to use the scanner.
+
+### Privacy Trade-off
+
+Because the current MVP uses a browser-scoped anonymous session, history is **device/browser scoped**.
+
+If the user changes device or clears browser storage, their previous guest history is not automatically available.
+
+Cross-device accounts and persistent authentication are planned for a future version.
+
+---
+
+## Security & Robustness
+
+VYNX is designed to treat scanned content as **untrusted input**.
+
+The backend includes:
+
+* Pydantic input validation
+* Per-input length limits
+* Payload-size protection
+* Rate limiting
+* Security headers
+* Structured error handling
+* SQLite session isolation
+* AI failure fallback
+* Environment-based secret management
+
+The frontend includes:
+
+* Loading states
+* Empty states
+* Error states
+* Network-error handling
+* 413 payload-too-large handling
+* 422 validation-error handling
+* 429 rate-limit handling
+* 500 server-error handling
+* React error boundary
+* Keyboard shortcuts
+* Visible focus states
+* `aria-live` result announcements
+* Reduced-motion support
+
+### AI Safety Boundary
+
+Qwen is used as a contextual analysis component.
+
+The deterministic rule engine remains an independent security layer, allowing VYNX to continue producing a result when AI analysis is unavailable.
+
+API keys are stored through environment variables and are not committed to the repository.
 
 ---
 
 ## Roadmap
 
-- Supabase auth to carry a guest session across devices
-- Sentry crash reporting in the frontend and backend
-- Deployment to Alibaba Cloud SAE via Docker
-- Community blacklist submissions with review
+The following capabilities are planned for future versions:
+
+### Authentication & Accounts
+
+* Supabase authentication
+* Guest-to-account upgrade
+* Email/OAuth authentication
+* Cross-device history
+
+### Infrastructure
+
+* Alibaba Cloud production deployment
+* Docker-based deployment
+* Managed database infrastructure
+* Production monitoring
+
+### Security
+
+* Sentry crash reporting
+* Expanded threat intelligence
+* Community blacklist submissions
+* Blacklist review workflow
+
+### Product
+
+* More advanced analytics
+* Improved multilingual detection
+* Additional phishing and scam categories
+* Expanded user education and explanations
 
 ---
 
-## Architecture
+## Project Structure
 
 ```text
-React + Vite (glass UI, guest session in localStorage)
-↓
-FastAPI (Docker on Alibaba Cloud SAE)
-↓
-Input Validation (Pydantic, strict limits) + SecurityMiddleware (rate limit, size guard, headers)
-↓
-Parallel Execution (asyncio)
-├── Deterministic Rules  (runs instantly)
-└── Qwen AI              (runs in parallel, optional)
-↓
-Evidence Fusion (Base + Penalty/Reward + Hard Veto)
-↓
-Risk Result
-↓
-SQLite (scan history + session-scoped stats)
+VYNX/
+│
+├── ai/
+│   └── qwen_client.py
+│
+├── backend/
+│   ├── main.py
+│   ├── ...
+│   └── API/security logic
+│
+├── detection/
+│   ├── ...
+│   └── deterministic detection rules
+│
+├── frontend/
+│   ├── src/
+│   ├── public/
+│   ├── package.json
+│   └── ...
+│
+├── tests/
+│   └── backend/
+│
+├── docs/
+│   ├── API_SPEC.md
+│   ├── ARCHITECTURE.md
+│   ├── DESIGN.md
+│   ├── MEMORY.md
+│   ├── PHASES.md
+│   ├── PRD.md
+│   └── RULES.md
+│
+├── .env.example
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
 ```
-
-More detail in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) and [`docs/API_SPEC.md`](docs/API_SPEC.md).
 
 ---
 
-## Running locally
+## Running Locally
 
-**Backend** (Python 3.14, port 8000)
+### 1. Backend
 
-```bash
+Python 3.14 is currently used for the backend.
+
+Create and activate the virtual environment:
+
+```powershell
 python -m venv .venv
-.venv\Scripts\activate        # Windows
+.venv\Scripts\activate
+```
+
+Install dependencies:
+
+```powershell
 pip install -r requirements.txt
+```
+
+Start FastAPI:
+
+```powershell
 uvicorn backend.main:app --reload
 ```
 
-Optional AI analysis: copy `.env.example` to `.env` and set `QWEN_API_KEY`. Without it, VYNX still works on rules alone.
+The backend runs on:
 
-**Frontend** (port 5173, proxies `/api` to 8000)
+```text
+http://localhost:8000
+```
 
-```bash
+### 2. Optional Qwen AI
+
+Copy the example environment file:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Add the Qwen API key to `.env`:
+
+```env
+QWEN_API_KEY=your_key_here
+QWEN_MODEL=qwen-plus
+```
+
+The application can still operate using the deterministic rule engine when Qwen is unavailable.
+
+**Never commit `.env` or expose your API key publicly.**
+
+### 3. Frontend
+
+Open another PowerShell terminal:
+
+```powershell
 cd frontend
 npm install
 npm run dev
 ```
 
-**Tests**
+The frontend runs on:
 
-```bash
-.venv\Scripts\python.exe -m pytest tests/backend -q
+```text
+http://localhost:5173
 ```
 
-31 tests covering detection rules, Urdu/Roman-Urdu handling, scoring caps, blacklist veto, security middleware, rate limiting, and session-scoped history and stats.
+The frontend communicates with the FastAPI backend through the `/api` routes.
 
 ---
 
-## Judge demo script (3 minutes)
+## Testing
 
-1. Open `http://localhost:5173`. Land on the guest sign-in card — point out that there is no email or password field, then open **Terms & Privacy** to show what is and is not stored.
-2. Click **Continue as guest**. The Scanner loads first, because that is the job the user came to do.
-3. Scan a malicious URL: `http://hbl-login-secure.com/verify`. Show the animated risk meter, the verdict and risk-level chips, the triggered signals, and the recommended action.
-4. Scan a legitimate message: a real HBL or Jazz SMS alert text. Show that VYNX says SAFE and explains why — it is not a tool that flags everything.
-5. Open **History**: both scans appear, scoped to this guest session only.
-6. Open **Dashboard**: totals, threats flagged, safe percentage, and the verdict/risk-level bars.
-7. Toggle **Dark mode** in the sidebar, reload the page — the theme persists with no flash of the wrong theme.
-8. Ask about abuse: 20 scans/minute per IP returns 429, and the UI says "Too many scans — wait a minute and try again" instead of breaking.
-9. Stop the backend and scan again — the toast reads "Backend unreachable", and a React error boundary catches render crashes with a reload button rather than a white screen.
+From the project root:
+
+```powershell
+.venv\Scripts\python.exe -m pytest tests/backend -q
+```
+
+The test suite covers areas including:
+
+* Detection rules
+* English phishing patterns
+* Roman-Urdu handling
+* Urdu-script handling
+* Risk scoring
+* Score caps
+* Blacklist hard-veto
+* Security middleware
+* Rate limiting
+* Session-scoped history
+* Session-scoped statistics
+
+---
+
+## Judge Demo — 3 Minutes
+
+### 1. Open VYNX
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+Show the guest entry screen.
+
+Point out that VYNX does **not require an email or password**.
+
+Open **Terms & Privacy** to demonstrate what information is stored.
+
+### 2. Start a Guest Session
+
+Click:
+
+**Continue as guest**
+
+The Scanner opens first because scanning is the primary task.
+
+### 3. Demonstrate a Malicious URL
+
+Use:
+
+```text
+http://hbl-login-secure.com/verify
+```
+
+Show:
+
+* Risk score
+* Risk level
+* Verdict
+* Detection confidence
+* Triggered signals
+* Recommended action
+* Explanation
+
+Explain that VYNX combines deterministic security rules with contextual AI analysis.
+
+### 4. Demonstrate a Legitimate Message
+
+Use a legitimate HBL or Jazz notification.
+
+Show that VYNX can identify safe content instead of simply flagging everything as malicious.
+
+### 5. Show History
+
+Open **History**.
+
+Demonstrate that the scans from the current guest session are stored and displayed.
+
+### 6. Show Dashboard
+
+Open **Dashboard**.
+
+Demonstrate:
+
+* Total scans
+* Threats flagged
+* Safe percentage
+* Verdict distribution
+* Risk-level distribution
+
+### 7. Demonstrate Dark Mode
+
+Toggle dark mode.
+
+Reload the page and show that the selected theme persists.
+
+### 8. Demonstrate Rate Limiting
+
+Trigger repeated requests until the API rate limit is reached.
+
+VYNX should return a `429` response and show a user-friendly message instead of breaking.
+
+### 9. Demonstrate Backend Failure Handling
+
+Stop the backend and attempt another scan.
+
+The frontend should show a backend/network error state rather than failing silently.
+
+---
+
+## API Overview
+
+| Endpoint       | Method | Purpose                               |
+| -------------- | ------ | ------------------------------------- |
+| `/api/health`  | GET    | Backend health check                  |
+| `/api/scan`    | POST   | Analyze URL, message, or email        |
+| `/api/history` | GET    | Retrieve session scan history         |
+| `/api/stats`   | GET    | Retrieve session dashboard statistics |
+
+Detailed API behavior is documented in:
+
+* `docs/API_SPEC.md`
+* `docs/ARCHITECTURE.md`
+
+---
+
+## Hackathon Objective
+
+VYNX demonstrates how generative AI can be combined with deterministic security logic to create a practical intelligent agent for phishing and scam detection.
+
+The project focuses on a real-world problem affecting users who receive suspicious:
+
+* Links
+* SMS messages
+* Emails
+* Bank impersonation messages
+* Telecom impersonation messages
+* Urgent requests for sensitive information
+
+Rather than relying exclusively on an AI model, VYNX combines **rule-based security signals, contextual Qwen analysis, and evidence fusion** to produce a more explainable risk assessment.
 
 ---
 
 ## License
 
-See [LICENSE](LICENSE).
+See [`LICENSE`](LICENSE).
+<!-- README updated -->

@@ -1,287 +1,287 @@
-
-**What changed:** Added Dockerfile task to Phase 0. Added Evidence Fusion implementation details to Phase 1 (weights, delta, hard veto, verdict/risk mapping). Added complete Specific Requirements to Phase 2 (Pydantic limits, asyncio, fallback, anonymous auth, CORS, metadata-only storage). Added entirely new Phase 3 (Frontend) with staged loading, skeleton loader, anonymous auth, responsive design. Added Phase 4 (Testing & Demo) with hackathon-specific tasks.
-
----
-
-## `docs/PRD.md`
-
-```markdown
 # VYNX — Product Requirements Document
 
-## 1. Product
-**Name:** VYNX
-**Type:** AI-powered Phishing and Spam Detector
-**Primary Goal:**
-Help people identify potentially dangerous URLs, messages, SMS, and emails before they click links, share sensitive information, or become victims of scams.
+## 1. Product Overview
 
-VYNX is designed with a particular focus on Pakistani users and local scam patterns, including English, Urdu, and mixed Urdu-English content.
+**VYNX** is an AI-powered phishing, scam, and suspicious-content detector designed with a focus on users in Pakistan.
+
+VYNX analyzes:
+
+* URLs
+* SMS/messages
+* Emails
+
+It supports content written in:
+
+* English
+* Roman Urdu
+* Urdu script
+
+The system combines deterministic cybersecurity detection rules with optional Qwen AI analysis to produce an explainable **0–100 risk score**.
+
+VYNX is designed to help users understand whether suspicious content may be dangerous without requiring cybersecurity expertise.
 
 ---
 
 ## 2. Problem
-Digital fraud is a serious everyday problem in Pakistan.
-Users receive:
-- phishing emails
-- fake SMS messages
-- WhatsApp-style scams
-- fake bank messages
-- fake payment/account alerts
-- OTP requests
-- credential harvesting messages
-- malicious or deceptive URLs
-- urgency and fear-based social engineering
 
-Many users cannot easily determine whether suspicious content is legitimate.
-VYNX aims to make security analysis understandable to non-technical users.
+Phishing and scam messages commonly use:
+
+* Urgency and fear
+* Fake account warnings
+* Requests for OTPs or personal information
+* Fake bank or government identities
+* Look-alike domains
+* Suspicious links
+* Social engineering
+* Roman Urdu and Urdu-language messaging
+
+Generic phishing detectors may not adequately account for the language, organizations, banks, telecom providers, and communication patterns commonly encountered by Pakistani users.
+
+VYNX addresses this gap through localized deterministic detection rules combined with contextual AI analysis.
 
 ---
 
 ## 3. Target Users
 
 ### Primary Users
-1. Employees
-2. Students
-3. Freelancers
-4. Small-business users
-5. General internet users in Pakistan
 
-### User Characteristics
-Users may have limited cybersecurity knowledge.
-The interface must therefore prioritize:
-- clarity
-- speed
-- simple language
-- actionable recommendations
-- minimal security jargon
+* General internet users
+* Students
+* Mobile users
+* Email users
+* People who receive suspicious SMS messages
+* Users who are unsure whether a URL or message is legitimate
 
----
+### Secondary Users
 
-## 4. Core User Problem
-A user receives suspicious content and asks:
-> "Is this safe?"
-
-VYNX should allow the user to submit the content and receive an understandable assessment.
+* Cybersecurity learners
+* Developers
+* Security awareness teams
+* Hackathon/demo evaluators
 
 ---
 
-## 5. Supported Inputs
+## 4. Core Features
 
-VYNX MVP supports:
+### 4.1 URL Scanning
 
-### URL
-Example:
-https://example.com/login
-Max length: 2,000 characters
+Users can submit a URL for analysis.
 
-### Message / SMS
-Plain text message.
-Max length: 2,000 characters
+VYNX evaluates signals such as:
 
-### Email
-Email content with optional sender information and links.
-Max length: 10,000 characters
-
-Inputs exceeding limits are rejected immediately with a clear error message.
+* Suspicious domains
+* Look-alike domains
+* URL structure
+* Known malicious indicators
+* Brand impersonation
+* Suspicious paths and patterns
 
 ---
 
-## 6. Core Analysis Signals
+### 4.2 Message Scanning
 
-VYNX should analyze available signals including:
+Users can submit SMS or message content.
 
-### URL
-- URL length
-- URL structure
-- hostname
-- subdomains
-- IP-address hosts
-- suspicious characters
-- encoding
-- punycode
-- suspicious keywords
-- unusual paths
-- unusual query parameters
-- URL shorteners
-- suspicious domain patterns
-- sender/domain mismatch when applicable
+The system analyzes:
 
-### Message / Email
-- urgency
-- fear
-- threats
-- social engineering
-- credential requests
-- OTP requests
-- financial requests
-- suspicious language
-- impersonation
-- sender information
-- suspicious links
-- known scam patterns
-- Pakistani/local context
-- English language
-- Urdu language
-- mixed Urdu-English language
+* Threat language
+* Urgency
+* Sensitive-information requests
+* Social engineering
+* Suspicious links
+* Language-specific patterns
+* Brand or organization impersonation
 
 ---
 
-## 7. Core Result
-Every completed scan should attempt to provide:
-- Verdict
-- Risk Score: 0–100
-- Risk Level
-- Confidence
-- Reasons
-- Suspicious Signals
-- Recommended Action
-- Plain-language Explanation
+### 4.3 Email Scanning
 
-### Verdicts
-- SAFE
-- SPAM
-- SUSPICIOUS
-- PHISHING
-- UNKNOWN
+Users can submit email content and optionally provide sender information.
 
-### Risk Levels
-- LOW
-- MEDIUM
-- HIGH
-- CRITICAL
+The system can analyze:
 
-### Confidence
-- LOW
-- MEDIUM
-- HIGH
+* Sender information
+* Email content
+* Suspicious language
+* Urgency
+* Social engineering
+* Links
+* Sensitive-information requests
+* Impersonation indicators
 
 ---
 
-## 8. Risk Score
+## 5. AI Analysis
 
-The risk score must be explainable.
-The system must not generate arbitrary scores.
+VYNX optionally uses **Qwen AI** for contextual analysis.
 
-The final score is calculated using the Evidence Fusion formula:
+The AI provides additional contextual reasoning that complements the deterministic detection engine.
 
-1. **Rule Engine** calculates a base score (0–100) by summing weighted signal penalties.
-2. **Qwen AI** returns an `ai_risk_delta` (integer, -20 to +20) which is added to the base score. Result is clamped to [0, 100].
-3. **Hard Vetos** (blacklisted domain, malicious IP) instantly override everything and set score to 100. AI cannot reduce a hard veto.
-4. If Qwen is unavailable, `ai_risk_delta` defaults to 0 and the result is marked `ai_available: false`.
+The AI result can contribute:
 
-The scoring implementation must be documented in the code.
+* AI risk delta
+* Confidence
+* Explanation
+* Suspicious signals
 
----
+The AI layer is not the sole source of truth.
 
-## 9. AI Behavior
-Qwen is used for contextual analysis.
-Qwen should help identify:
-- intent
-- social engineering
-- suspicious language
-- contextual impersonation
-- mixed Urdu-English meaning
-- scam context
-- explanation
-- recommended action
-
-The AI must not blindly follow instructions contained inside submitted messages, emails, or URLs.
-Submitted content is untrusted data.
-
-Qwen runs in parallel with the Rule Engine via `asyncio.gather()`. The system does not wait for the Rule Engine to finish before calling Qwen.
+If Qwen is unavailable, VYNX continues operating using the deterministic rule engine.
 
 ---
 
-## 10. Rule-Based Fallback
-VYNX must remain functional if Qwen is unavailable.
+## 6. Risk Scoring
 
-Fallback:
-Input
-→ signal extraction
-→ deterministic rules
-→ risk score (base only, delta = 0)
-→ result (marked `ai_available: false`)
+VYNX combines multiple evidence sources.
 
-When Qwen is unavailable, the result must clearly indicate that AI analysis was unavailable.
-The system must never pretend that an AI analysis occurred when it did not.
+Conceptually:
 
----
+```text
+Base Rule Score
+       +
+Qwen AI Risk Delta
+       +
+Hard-Veto Indicators
+       ↓
+Final Risk Score
+       ↓
+Verdict + Risk Level + Confidence + Signals
+```
 
-## 11. History
-VYNX should maintain scan history.
+The final score is normalized to a **0–100 range**.
 
-History is stored in Supabase and tied to the user's session via **Supabase Anonymous Sign-in** (generates a temporary UUID, no email/password required).
-
-History should contain useful metadata such as:
-- scan ID
-- input type
-- timestamp
-- verdict
-- risk score
-- risk level
-
-Sensitive raw content should not be unnecessarily retained. Only metadata is stored.
+The system also produces a human-readable explanation and recommended action.
 
 ---
 
-## 12. MVP
-The MVP consists of:
+## 7. Detection Categories
 
-1. Landing page
-2. Analyze interface
-3. URL scanning
-4. Message scanning
-5. Email scanning
-6. Loading state (with skeleton loaders for AI section)
-7. Result screen (with Risk Meter color indicator)
-8. Scan history (via Supabase Anonymous Auth)
-9. Rule-based detection
-10. Qwen integration (parallel execution)
-11. Risk scoring (Evidence Fusion formula)
-12. Explanation
-13. Responsive UI
-14. Light/dark theme
+VYNX can identify suspicious content associated with categories such as:
+
+* PHISHING
+* SPAM
+* MALICIOUS LINKS
+* SUSPICIOUS CONTENT
 
 ---
 
-## 13. Non-MVP
-Do not prioritize:
-- enterprise SOC functionality
-- threat intelligence dashboards
-- complex admin systems
-- real-time browser extensions
-- mobile native apps
-- automatic URL crawling
-- autonomous web browsing
-- custom model training
-- complex authentication unless time permits
-- unnecessary integrations
+## 8. Localization
+
+VYNX includes detection patterns relevant to Pakistani users.
+
+Examples include:
+
+* Roman Urdu threat language
+* Urdu-script patterns
+* Pakistani bank impersonation
+* Telecom impersonation
+* Requests for OTPs
+* Requests for CNIC/NADRA-related information
+* Localized social-engineering patterns
+
+Localization is implemented through deterministic detection rules rather than relying entirely on the AI model.
 
 ---
 
-## 14. Product Principles
-VYNX must be:
-- fast
-- understandable
-- secure
-- trustworthy
-- responsive
-- visually modern
-- Pakistan-aware
-- transparent about uncertainty
+## 9. Privacy Model
 
-VYNX should help users make safer decisions rather than overwhelm them with technical information.
+The current MVP does not require traditional user accounts.
+
+Instead:
+
+* A browser-generated UUID identifies a guest session.
+* The UUID is stored locally in the browser.
+* Scan history is associated with the session ID.
+* No password is required.
+* Sign-out removes the local session identifier.
+* History is device/session scoped.
+
+The application is designed to minimize the amount of persistent user information stored.
 
 ---
 
-## 15. Success Criteria
-The MVP is successful when a user can:
-1. Open VYNX.
-2. Select URL, Message, or Email.
-3. Submit suspicious content.
-4. Receive an analysis.
-5. See a 0–100 risk score with color indicator.
-6. Understand why the content was flagged.
-7. See what action is recommended.
-8. Review previous scans.
+## 10. Current MVP
 
-The complete flow must work end-to-end.
+The current repository implements:
+
+* URL scanning
+* Message scanning
+* Email scanning
+* English detection
+* Roman Urdu detection
+* Urdu-script detection
+* Deterministic rule engine
+* Qwen AI integration
+* AI fallback
+* Evidence fusion
+* Risk scoring
+* Confidence calculation
+* Explainable results
+* Guest sessions
+* Scan history
+* Dashboard statistics
+* Light/dark themes
+* Responsive frontend
+* Security middleware
+* Rate limiting
+* Input validation
+* SQLite persistence
+* Error handling
+* Accessibility improvements
+* Backend tests
+
+---
+
+## 11. Non-Goals of the Current MVP
+
+The current version does **not** provide:
+
+* Traditional user registration/login
+* Supabase authentication
+* Cloud-hosted Supabase database
+* Automatic browsing of submitted URLs
+* Automatic opening/execution of suspicious content
+* Community-submitted blacklist management
+* Production monitoring through Sentry
+* Production cloud deployment
+
+These are intentionally outside the current MVP scope or are future improvements.
+
+---
+
+## 12. Future Roadmap
+
+The following are planned improvements and are **not currently implemented in the submitted MVP**:
+
+1. Supabase authentication and cross-device sessions
+2. Sentry monitoring and crash reporting
+3. Alibaba Cloud production deployment
+4. Community blacklist submissions and review
+5. Expanded threat-intelligence integrations
+6. Additional language support
+7. Improved model-based classification
+8. More advanced email parsing
+9. Production-scale database infrastructure
+
+---
+
+## 13. Success Criteria
+
+VYNX succeeds when a user can:
+
+1. Open the application.
+2. Submit a suspicious URL, message, or email.
+3. Receive a risk score.
+4. Understand why the content was flagged.
+5. See relevant threat signals.
+6. Receive a recommended action.
+7. Review previous scans.
+8. Use the application without creating an account.
+
+---
+
+## 14. Hackathon Objective
+
+VYNX demonstrates how deterministic cybersecurity rules and generative AI can work together to create an explainable phishing and scam detection system.
+
+The project specifically demonstrates Qwen AI integration while maintaining deterministic fallback behavior for reliability and security.
